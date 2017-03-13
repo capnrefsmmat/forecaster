@@ -1,0 +1,65 @@
+From: Forecast Bot <forecaster@refsmmat.com>
+To: Example Recipient <example@example.com>
+Subject: Forecast for Monday, March 13th, 2017
+Date: Mon, 13 Mar 2017 10:52:48 -0400
+
+Current conditions in Pittsburgh, PA
+========================================================================
+Cloudy, 24°F, with 55% humidity. Wind 8 mph E.
+
+11 AM: Partly Sunny, 26°F.
+2 PM: Partly Sunny, 35°F.
+5 PM: Partly Sunny, 37°F.
+8 PM: Slight Chance Snow, 33°F.
+11 PM: Chance Snow, 30°F.
+
+
+Alerts
+========================================================================
+Winter Weather Advisory until Tuesday at 11 PM EDT
+* SNOW ACCUMULATIONS...4 to 8 inches.
+
+* TIMING...Monday evening through Tuesday night.
+
+* IMPACTS...Hazardous driving conditions are expected.
+
+* WINDS...Northeast shifting to northwest Tuesday afternoon 10 to
+15 mph with gusts up to 25 mph.
+
+
+Forecast for Pittsburgh, PA
+========================================================================
+Today
+------------------------------------------------------------------------
+Partly sunny, with a high near 37. East southeast wind around 10 mph.
+
+Tonight
+------------------------------------------------------------------------
+Snow after 7pm. Mostly cloudy, with a low around 27. East southeast wind
+6 to 12 mph. Chance of precipitation is 100%. New snow accumulation of 3
+to 5 inches possible.
+
+Tuesday
+------------------------------------------------------------------------
+Snow. Cloudy, with a high near 32. North northeast wind 3 to 10 mph.
+Chance of precipitation is 100%. New snow accumulation of 5 to 9 inches
+possible.
+
+Tuesday Night
+------------------------------------------------------------------------
+Snow before 8pm, then snow showers. Cloudy, with a low around 15.
+Northwest wind around 14 mph. Chance of precipitation is 90%. New snow
+accumulation of 1 to 3 inches possible.
+
+Wednesday
+------------------------------------------------------------------------
+A chance of snow showers. Cloudy, with a high near 23. West northwest
+wind 12 to 17 mph, with gusts as high as 28 mph. Chance of precipitation
+is 50%. New snow accumulation of 1 to 2 inches possible.
+
+Wednesday Night
+------------------------------------------------------------------------
+A chance of snow showers. Mostly cloudy, with a low around 14. Chance of
+precipitation is 30%. New snow accumulation of less than half an inch
+possible.
+
