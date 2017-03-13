@@ -24,7 +24,6 @@
 (provide write-forecast write-forecast-email)
 
 (struct point (lat lon) #:transparent)
-(struct gridpoint (station x y))
 
 ;; Location configuration. The API makes it annoying to get the point and
 ;; station for that point, so I've hardcoded them.
@@ -115,13 +114,6 @@
 
 (define (url->json url)
   (read-json (get-pure-port url extra-headers)))
-
-(define (get-point-gridpoint pt)
-  (define properties
-    (hash-ref (url->json (point-url pt)) 'properties))
-
-  (gridpoint (hash-ref properties 'cwa) (hash-ref properties 'gridX)
-             (hash-ref properties 'gridY)))
 
 (define (get-point-forecast-periods pt)
   (hash-ref (hash-ref (url->json (forecast-url pt)) 'properties) 'periods))
