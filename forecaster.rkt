@@ -69,7 +69,7 @@
   (~t (iso8601->moment str) "h aa"))
 
 
-;;; Formatting text and API endpoints
+;;; Formatting text
 
 (define (wind-desc speed dir)
   (format "Wind ~a mph ~a"
@@ -83,57 +83,53 @@
   (format "https://forecast-v3.weather.gov/point/~a,~a"
           (point-lat pt) (point-lon pt)))
 
-(define (point-url pt)
-  (string->url
-   (format "https://api.weather.gov/points/~a,~a"
-           (point-lat pt) (point-lon pt))))
 
-(define (forecast-url pt)
-  (string->url
-   (format "https://api.weather.gov/points/~a,~a/forecast"
-           (point-lat pt) (point-lon pt))))
+;;; API endpoints
 
-(define (hourly-forecast-url pt)
-  (string->url
-   (format "https://api.weather.gov/points/~a,~a/forecast/hourly"
-           (point-lat pt) (point-lon pt))))
+;; convenience to substitute point coordinates into an endpoint URL
+(define ((make-point->url url) pt)
+  (string->url (format url (point-lat pt) (point-lon pt))))
+
+(define point-url
+  (make-point->url "https://api.weather.gov/points/~a,~a"))
+
+(define forecast-url
+  (make-point->url "https://api.weather.gov/points/~a,~a/forecast"))
+
+(define hourly-forecast-url
+  (make-point->url "https://api.weather.gov/points/~a,~a/forecast/hourly"))
+
+(define alert-url
+  (make-point->url "https://api.weather.gov/alerts/active?point=~a,~a"))
 
 (define (station-url station)
   (string->url
    (format "https://api.weather.gov/stations/~a/observations/current" station)))
 
-(define (alert-url pt)
-  (string->url
-   (format "https://api.weather.gov/alerts/active?point=~a,~a"
-           (point-lat pt) (point-lon pt))))
-
 
 ;;; API accessors
 
+(define (url->json url)
+  (read-json (get-pure-port url extra-headers)))
+
 (define (get-point-gridpoint pt)
-  (define p (get-pure-port (point-url pt) extra-headers))
-  (define properties (hash-ref (read-json p) 'properties))
+  (define properties
+    (hash-ref (url->json (point-url pt)) 'properties))
 
   (gridpoint (hash-ref properties 'cwa) (hash-ref properties 'gridX)
              (hash-ref properties 'gridY)))
 
 (define (get-point-forecast-periods pt)
-  (define p
-    (get-pure-port (forecast-url pt) extra-headers))
-  (hash-ref (hash-ref (read-json p) 'properties) 'periods))
+  (hash-ref (hash-ref (url->json (forecast-url pt)) 'properties) 'periods))
 
 (define (get-point-hourly-forecasts pt)
-  (define p
-    (get-pure-port (hourly-forecast-url pt) extra-headers))
-  (hash-ref (hash-ref (read-json p) 'properties) 'periods))
+  (hash-ref (hash-ref (url->json (hourly-forecast-url pt)) 'properties) 'periods))
 
 (define (get-station-observation station)
-  (define p (get-pure-port (station-url station) extra-headers))
-  (hash-ref (read-json p) 'properties))
+  (hash-ref (url->json (station-url station)) 'properties))
 
 (define (get-point-alerts pt)
-  (define p (get-pure-port (alert-url pt) extra-headers))
-  (hash-ref (read-json p) 'features))
+  (hash-ref (url->json (alert-url pt)) 'features))
 
 
 ;;; Formatting output
