@@ -82,16 +82,15 @@
 (define (header-line header header-char)
   (string-append header "\n" (make-string forecast-line-width header-char) "\n"))
 
-(define (full-forecast-link pt)
-  (format "https://forecast-v3.weather.gov/point/~a,~a"
-          (point-lat pt) (point-lon pt)))
-
 
 ;;; API endpoints
 
 ;; convenience to substitute point coordinates into an endpoint URL
 (define ((make-point->url url) pt)
   (string->url (format url (point-lat pt) (point-lon pt))))
+
+(define full-forecast-link
+  (make-point->url "https://forecast-v3.weather.gov/point/~a,~a"))
 
 (define point-url
   (make-point->url "https://api.weather.gov/points/~a,~a"))
@@ -213,6 +212,8 @@
   (define hours (get-point-hourly-forecasts forecast-point))
   (write-hourly-forecasts hours)
 
+  (display "\nMore detail:\n")
+  (display (url->string (full-forecast-link forecast-point)))
   (display "\n\n")
 
   (define alerts
