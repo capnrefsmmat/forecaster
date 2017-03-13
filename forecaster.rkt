@@ -35,6 +35,10 @@
 (define forecast-line-width 72)
 (define forecast-periods 6)
 
+;; For generated emails
+(define forecast-recipient "Jane Doe <jane@example.com>")
+(define forecast-sender "Forecast Bot <forecaster@refsmmat.com>")
+
 ;; Give hourly forecasts for every three hours, for up to five periods
 (define forecast-hourly-interval 3)
 (define forecast-hourly-periods 5)
@@ -240,8 +244,8 @@
     (with-output-to-string (thunk (write-forecast short))))
 
   (define head (standard-message-header
-                "Forecast Bot <forecaster@refsmmat.com>"
-                (list "Alex Reinhart <alex@refsmmat.com>")
+                forecast-sender
+                (list forecast-recipient)
                 '() '()
                 (format "Forecast for ~a" (date->string (current-date)))))
   (display (string-append head forecast)))
