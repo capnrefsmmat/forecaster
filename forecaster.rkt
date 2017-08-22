@@ -76,8 +76,8 @@
 
 (define (wind-desc speed dir)
   (format "Wind ~a mph ~a"
-          (inexact->exact (round (m/s->mph speed)))
-          (degrees->compass dir)))
+          (if (eq? speed 'null) "?" (inexact->exact (round (m/s->mph speed))))
+          (if (eq? dir 'null) "" (degrees->compass dir))))
 
 (define (header-line header header-char)
   (string-append header "\n" (make-string forecast-line-width header-char) "\n"))
