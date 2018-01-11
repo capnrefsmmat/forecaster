@@ -2,4 +2,5 @@
 
 (require "forecaster.rkt")
 
-(write-forecast-email)
+(define forecast-coords (point 0 0))
+(write-forecast-email forecast-coords)

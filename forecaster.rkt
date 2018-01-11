@@ -21,22 +21,15 @@
 (require racket/date)
 (require scribble/text/wrap)
 
-(provide write-forecast write-forecast-email)
+(provide point write-forecast write-forecast-email)
 
 (struct point (lat lon) #:transparent)
-
-;; Location configuration. The API makes it annoying to get the point and
-;; station for that point, so I've hardcoded them.
-
-(define forecast-point (point 0 0))
-(define forecast-station "KAGC")
-(define forecast-location "Pittsburgh, PA")
-(define forecast-line-width 72)
-(define forecast-periods 6)
 
 ;; For generated emails
 (define forecast-recipient "Jane Doe <jane@example.com>")
 (define forecast-sender "Forecast Bot <forecaster@refsmmat.com>")
+(define forecast-line-width 72)
+(define forecast-periods 6)
 
 ;; Give hourly forecasts for every three hours, for up to five periods
 (define forecast-hourly-interval 3)
@@ -83,7 +76,38 @@
   (string-append header "\n" (make-string forecast-line-width header-char) "\n"))
 
 
-;;; API endpoints
+;;; Getting the local station and forecast details
+
+(struct forecast-point (wfo forecast hourly station description alerts) #:transparent)
+
+;; Take a point (lat and lon) and get forecast and alert URLs, plus description,
+;; observation station, weather forecast office (WFO), etc.
+(define (point->forecast-point pt)
+  (define pt-url (string->url (format "https://api.weather.gov/points/~a,~a"
+                                      (point-lat pt) (point-lon pt))))
+  (define pt-props (hash-ref (url->json pt-url) 'properties))
+  (define hourly (string->url (hash-ref pt-props 'forecastHourly)))
+  (define wfo (hash-ref pt-props 'cwa))
+  (define forecast (string->url (hash-ref pt-props 'forecast)))
+  (define station
+    (grid->closest-station wfo (hash-ref pt-props 'gridX) (hash-ref pt-props 'gridY)))
+  (define station-url
+    (string->url
+     (format "https://api.weather.gov/stations/~a/observations/current"
+             (first station))))
+  (define alerts (string->url (format "https://api.weather.gov/alerts/active?point=~a,~a"
+                                      (point-lat pt) (point-lon pt))))
+  (forecast-point wfo forecast hourly station-url (last station) alerts))
+
+;; Get the observation station nearest the forecast point. Return its ID and name
+(define (grid->closest-station wfo x y)
+  (define stations
+    (url->json (string->url
+                (format "https://api.weather.gov/gridpoints/~a/~a,~a/stations"
+                        wfo x y))))
+  (define closest-station (first (hash-ref stations 'features)))
+  (define station-props (hash-ref closest-station 'properties))
+  (list (hash-ref station-props 'stationIdentifier) (hash-ref station-props 'name)))
 
 ;; convenience to substitute point coordinates into an endpoint URL
 (define ((make-point->url url) pt)
@@ -92,22 +116,6 @@
 (define full-forecast-link
   (make-point->url "https://forecast-v3.weather.gov/point/~a,~a"))
 
-(define point-url
-  (make-point->url "https://api.weather.gov/points/~a,~a"))
-
-(define forecast-url
-  (make-point->url "https://api.weather.gov/points/~a,~a/forecast"))
-
-(define hourly-forecast-url
-  (make-point->url "https://api.weather.gov/points/~a,~a/forecast/hourly"))
-
-(define alert-url
-  (make-point->url "https://api.weather.gov/alerts/active?point=~a,~a"))
-
-(define (station-url station)
-  (string->url
-   (format "https://api.weather.gov/stations/~a/observations/current" station)))
-
 
 ;;; API accessors
 
@@ -115,16 +123,16 @@
   (read-json (get-pure-port url extra-headers)))
 
 (define (get-point-forecast-periods pt)
-  (hash-ref (hash-ref (url->json (forecast-url pt)) 'properties) 'periods))
+  (hash-ref (hash-ref (url->json (forecast-point-forecast pt)) 'properties) 'periods))
 
 (define (get-point-hourly-forecasts pt)
-  (hash-ref (hash-ref (url->json (hourly-forecast-url pt)) 'properties) 'periods))
+  (hash-ref (hash-ref (url->json (forecast-point-hourly pt)) 'properties) 'periods))
 
-(define (get-station-observation station)
-  (hash-ref (url->json (station-url station)) 'properties))
+(define (get-station-observation pt)
+  (hash-ref (url->json (forecast-point-station pt)) 'properties))
 
 (define (get-point-alerts pt)
-  (hash-ref (url->json (alert-url pt)) 'features))
+  (hash-ref (url->json (forecast-point-alerts pt)) 'features))
 
 
 ;;; Formatting output
@@ -202,39 +210,40 @@
 
 ;;; Main output methods
 
-(define (write-forecast [short #f])
+(define (write-forecast coords [short #f])
+  (define pt (point->forecast-point coords))
   (display (header-line
-            (format "Current conditions in ~a" forecast-location) #\=))
-  (write-station-observation (get-station-observation forecast-station))
+            (format "Current conditions in ~a" (forecast-point-description pt)) #\=))
+  (write-station-observation (get-station-observation pt))
 
   (display "\n")
 
-  (define hours (get-point-hourly-forecasts forecast-point))
+  (define hours (get-point-hourly-forecasts pt))
   (write-hourly-forecasts hours)
 
   (display "\nMore detail:\n")
-  (display (url->string (full-forecast-link forecast-point)))
+  (display (url->string (full-forecast-link coords)))
   (display "\n\n")
 
   (define alerts
     (filter (lambda (a)
               (set-member? desired-alert-types
                            (hash-ref (hash-ref a 'properties) 'event)))
-            (get-point-alerts forecast-point)))
+            (get-point-alerts pt)))
 
   (when (> (length alerts) 0)
     (display (header-line "Alerts" #\=))
     (write-alerts alerts short)
     (display "\n"))
 
-  (display (header-line (format "Forecast for ~a" forecast-location) #\=))
+  (display (header-line (format "Forecast for ~a" (forecast-point-description pt)) #\=))
 
-  (define periods (get-point-forecast-periods forecast-point))
+  (define periods (get-point-forecast-periods pt))
   (write-forecast-periods (take periods forecast-periods) short))
 
-(define (write-forecast-email [short #f])
+(define (write-forecast-email coords [short #f])
   (define forecast
-    (with-output-to-string (thunk (write-forecast short))))
+    (with-output-to-string (thunk (write-forecast coords short))))
 
   (define head (standard-message-header
                 forecast-sender
@@ -242,4 +251,3 @@
                 '() '()
                 (format "Forecast for ~a" (date->string (current-date)))))
   (display (string-append head forecast)))
-
